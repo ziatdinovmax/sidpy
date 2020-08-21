@@ -16,5 +16,4 @@ from sidpy.sid import Dimension, Translator
 from . import hdf_utils, dimension
 from .nsi_data import NSIDataset
 
-__all__ = ['NSIDataset', 'hdf_utils', 'dimension',
-           'Dimension', 'Translator']
+__all__ = ["NSIDataset", "hdf_utils", "dimension", "Dimension", "Translator"]

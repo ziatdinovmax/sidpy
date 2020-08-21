@@ -16,24 +16,49 @@ import numpy as np
 from dask import array as da
 
 from sidpy.base.num_utils import contains_integers
-from sidpy.base.string_utils import validate_single_string_arg, \
-    validate_string_args, validate_list_of_strings
+from sidpy.base.string_utils import (
+    validate_single_string_arg,
+    validate_string_args,
+    validate_list_of_strings,
+)
 from sidpy.hdf.dtype_utils import validate_dtype
-from sidpy.hdf.hdf_utils import lazy_load_array, get_attr, write_simple_attrs, \
-    is_editable_h5, write_book_keeping_attrs
+from sidpy.hdf.hdf_utils import (
+    lazy_load_array,
+    get_attr,
+    write_simple_attrs,
+    is_editable_h5,
+    write_book_keeping_attrs,
+)
 from sidpy.sid import Dimension
 
-from .simple import link_as_main, check_if_main, validate_dims_against_main, validate_anc_h5_dsets, copy_dataset
+from .simple import (
+    link_as_main,
+    check_if_main,
+    validate_dims_against_main,
+    validate_anc_h5_dsets,
+    copy_dataset,
+)
 from ..dimension import validate_dimensions
 
 if sys.version_info.major == 3:
     unicode = str
 
 
-def write_main_dataset(h5_parent_group, main_data, main_data_name, 
-                        quantity, units, data_type, modality, source, 
-                        dim_dict, main_dset_attrs=None, verbose=False,
-                        slow_to_fast=False, **kwargs):
+def write_main_dataset(
+    h5_parent_group,
+    main_data,
+    main_data_name,
+    quantity,
+    units,
+    data_type,
+    modality,
+    source,
+    dim_dict,
+    main_dset_attrs=None,
+    verbose=False,
+    slow_to_fast=False,
+    **kwargs
+):
 
     """
 
@@ -78,93 +103,121 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name,
         Reference to the main dataset
 
     """
-    
+
     if not isinstance(h5_parent_group, (h5py.Group, h5py.File)):
-        raise TypeError('h5_parent_group should be a h5py.File or h5py.Group object')
+        raise TypeError("h5_parent_group should be a h5py.File or h5py.Group object")
     if not is_editable_h5(h5_parent_group):
-        raise ValueError('The provided file is not editable')
+        raise ValueError("The provided file is not editable")
     if verbose:
-        print('h5 group and file OK')
+        print("h5 group and file OK")
 
     #####################
     # Validate Main Data
     #####################
-    quantity, units, main_data_name, data_type, modality, source = validate_string_args([quantity, units, main_data_name, data_type, modality, source],
-                                                           ['quantity', 'units', 'main_data_name','data_type', 'modality', 'source'])
+    quantity, units, main_data_name, data_type, modality, source = validate_string_args(
+        [quantity, units, main_data_name, data_type, modality, source],
+        ["quantity", "units", "main_data_name", "data_type", "modality", "source"],
+    )
 
     if verbose:
-            print('quantity, units, main_data_name all OK')
+        print("quantity, units, main_data_name all OK")
 
     quantity = quantity.strip()
     units = units.strip()
     main_data_name = main_data_name.strip()
-    if '-' in main_data_name:
-        warn('main_data_name should not contain the "-" character. Reformatted name from:{} to '
-             '{}'.format(main_data_name, main_data_name.replace('-', '_')))
-    main_data_name = main_data_name.replace('-', '_')
-    
-    if  isinstance(main_data, (list, tuple)):
+    if "-" in main_data_name:
+        warn(
+            'main_data_name should not contain the "-" character. Reformatted name from:{} to '
+            "{}".format(main_data_name, main_data_name.replace("-", "_"))
+        )
+    main_data_name = main_data_name.replace("-", "_")
+
+    if isinstance(main_data, (list, tuple)):
         if not contains_integers(main_data, min_val=1):
-            raise ValueError('main_data if specified as a shape should be a list / tuple of integers >= 1')
+            raise ValueError(
+                "main_data if specified as a shape should be a list / tuple of integers >= 1"
+            )
         if len(main_data) < 1:
-            raise ValueError('main_data if specified as a shape should contain at least 1 number for the singular dimension')
-        if 'dtype' not in kwargs:
-            raise ValueError('dtype must be included as a kwarg when creating an empty dataset')
-        _ = validate_dtype(kwargs.get('dtype'))
+            raise ValueError(
+                "main_data if specified as a shape should contain at least 1 number for the singular dimension"
+            )
+        if "dtype" not in kwargs:
+            raise ValueError(
+                "dtype must be included as a kwarg when creating an empty dataset"
+            )
+        _ = validate_dtype(kwargs.get("dtype"))
         main_shape = main_data
         if verbose:
-            print('Selected empty dataset creation. OK so far')
+            print("Selected empty dataset creation. OK so far")
     elif isinstance(main_data, (np.ndarray, da.core.Array)):
         main_shape = main_data.shape
         if verbose:
-            print('Provided numpy or Dask array for main_data OK so far')
+            print("Provided numpy or Dask array for main_data OK so far")
     else:
-        raise TypeError('main_data should either be a numpy array or a tuple / list with the shape of the data')
-      
+        raise TypeError(
+            "main_data should either be a numpy array or a tuple / list with the shape of the data"
+        )
+
     ######################
     # Validate Dimensions
     ######################
     # An N dimensional dataset should have N items in the dimension dictionary
     if len(dim_dict) != len(main_shape):
-        raise ValueError('Incorrect number of dimensions: {} provided to support main data, of shape: {}'.format(len(dim_dict), main_shape))
+        raise ValueError(
+            "Incorrect number of dimensions: {} provided to support main data, of shape: {}".format(
+                len(dim_dict), main_shape
+            )
+        )
     if set(range(len(main_shape))) != set(dim_dict.keys()):
-        raise KeyError('')
-    
-    if False in validate_main_dimensions(main_shape,dim_dict, h5_parent_group):
-        print('Dimensions incorrect')
+        raise KeyError("")
+
+    if False in validate_main_dimensions(main_shape, dim_dict, h5_parent_group):
+        print("Dimensions incorrect")
         return
     if verbose:
-        print('Dimensions are correct!')
+        print("Dimensions are correct!")
 
     #####################
     # Write Main Dataset
     ####################
-    if h5_parent_group.file.driver == 'mpio':
-        if kwargs.pop('compression', None) is not None:
-            warn('This HDF5 file has been opened wth the "mpio" communicator. '
-                 'mpi4py does not allow creation of compressed datasets. Compression kwarg has been removed')
+    if h5_parent_group.file.driver == "mpio":
+        if kwargs.pop("compression", None) is not None:
+            warn(
+                'This HDF5 file has been opened wth the "mpio" communicator. '
+                "mpi4py does not allow creation of compressed datasets. Compression kwarg has been removed"
+            )
 
     if main_data_name in h5_parent_group:
-        print('Oops, dataset exits')
-        #del h5_parent_group[main_data_name]
+        print("Oops, dataset exits")
+        # del h5_parent_group[main_data_name]
         return
-    
+
     if isinstance(main_data, np.ndarray):
         # Case 1 - simple small dataset
-        h5_main = h5_parent_group.create_dataset(main_data_name, data=main_data, **kwargs)
+        h5_main = h5_parent_group.create_dataset(
+            main_data_name, data=main_data, **kwargs
+        )
         if verbose:
-            print('Created main dataset with provided data')
+            print("Created main dataset with provided data")
     elif isinstance(main_data, da.core.Array):
         # Case 2 - Dask dataset
         # step 0 - get rid of any automated dtype specification:
-        _ = kwargs.pop('dtype', None)
+        _ = kwargs.pop("dtype", None)
         # step 1 - create the empty dataset:
-        h5_main = h5_parent_group.create_dataset(main_data_name, shape=main_data.shape, dtype=main_data.dtype,
-                                                 **kwargs)
+        h5_main = h5_parent_group.create_dataset(
+            main_data_name, shape=main_data.shape, dtype=main_data.dtype, **kwargs
+        )
         if verbose:
-            print('Created empty dataset: {} for writing Dask dataset: {}'.format(h5_main, main_data))
-            print('Dask array will be written to HDF5 dataset: "{}" in file: "{}"'.format(h5_main.name,
-                                                                                          h5_main.file.filename))
+            print(
+                "Created empty dataset: {} for writing Dask dataset: {}".format(
+                    h5_main, main_data
+                )
+            )
+            print(
+                'Dask array will be written to HDF5 dataset: "{}" in file: "{}"'.format(
+                    h5_main.name, h5_main.file.filename
+                )
+            )
         # Step 2 - now ask Dask to dump data to disk
         da.to_hdf5(h5_main.file.filename, {h5_main.name: main_data})
         # main_data.to_hdf5(h5_main.file.filename, h5_main.name)  # Does not work with python 2 for some reason
@@ -172,57 +225,61 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name,
         # Case 3 - large empty dataset
         h5_main = h5_parent_group.create_dataset(main_data_name, main_data, **kwargs)
         if verbose:
-            print('Created empty dataset for Main')
+            print("Created empty dataset for Main")
 
-     #################
+    #################
     # Add Dimensions
     #################
     dimensional_dict = {}
     for i, this_dim in dim_dict.items():
         if isinstance(this_dim, h5py.Dataset):
             this_dim_dset = this_dim
-            if 'nsid_version' not in this_dim_dset.attrs:
-                this_dim_dset.attrs['nsid_version'] = '0.0.1'
-            #this_dim_dset[i] = this_dim
+            if "nsid_version" not in this_dim_dset.attrs:
+                this_dim_dset.attrs["nsid_version"] = "0.0.1"
+            # this_dim_dset[i] = this_dim
         elif isinstance(this_dim, Dimension):
-            this_dim_dset = h5_parent_group.create_dataset(this_dim.name,data=this_dim.values)
-            attrs_to_write={'name':  this_dim.name, 'units': this_dim.units, 'quantity':  this_dim.quantity, 'dimension_type': this_dim.dimension_type, 'nsid_version' : '0.0.1'}
+            this_dim_dset = h5_parent_group.create_dataset(
+                this_dim.name, data=this_dim.values
+            )
+            attrs_to_write = {
+                "name": this_dim.name,
+                "units": this_dim.units,
+                "quantity": this_dim.quantity,
+                "dimension_type": this_dim.dimension_type,
+                "nsid_version": "0.0.1",
+            }
             write_simple_attrs(this_dim_dset, attrs_to_write)
 
         else:
-            print(i,' not a good dimension')
+            print(i, " not a good dimension")
             pass
         dimensional_dict[i] = this_dim_dset
-    
-    
-        
-    attrs_to_write={'quantity': quantity, 'units': units, 'nsid_version' : '0.0.1'}
-    attrs_to_write['main_data_name'] =  main_data_name
-    attrs_to_write['data_type'] =  data_type
-    attrs_to_write['modality'] =  modality
-    attrs_to_write['source'] =  source
-    
+
+    attrs_to_write = {"quantity": quantity, "units": units, "nsid_version": "0.0.1"}
+    attrs_to_write["main_data_name"] = main_data_name
+    attrs_to_write["data_type"] = data_type
+    attrs_to_write["modality"] = modality
+    attrs_to_write["source"] = source
+
     write_simple_attrs(h5_main, attrs_to_write)
 
-    
     if verbose:
-        print('Wrote dimensions and attributes to main dataset')
+        print("Wrote dimensions and attributes to main dataset")
 
     if isinstance(main_dset_attrs, dict):
         write_simple_attrs(h5_main, main_dset_attrs)
         if verbose:
-            print('Wrote provided attributes to main dataset')
+            print("Wrote provided attributes to main dataset")
 
-    #ToDo: check if we need  write_book_keeping_attrs(h5_main)
+    # ToDo: check if we need  write_book_keeping_attrs(h5_main)
     NSID_data_main = link_as_main(h5_main, dimensional_dict)
     if verbose:
-        print('Successfully linked datasets - dataset should be main now')
+        print("Successfully linked datasets - dataset should be main now")
 
-    
-    return NSID_data_main#NSIDataset(h5_main)
+    return NSID_data_main  # NSIDataset(h5_main)
 
 
-def validate_main_dimensions(main_shape, dim_dict, h5_parent_group ):
+def validate_main_dimensions(main_shape, dim_dict, h5_parent_group):
     # Each item could either be a Dimension object or a HDF5 dataset
     # Collect the file within which these ancillary HDF5 objectsa are present if they are provided
     which_h5_file = {}
@@ -233,34 +290,41 @@ def validate_main_dimensions(main_shape, dim_dict, h5_parent_group ):
     for index, dim_exp_size in enumerate(main_shape):
         this_dim = dim_dict[index]
         if isinstance(this_dim, h5py.Dataset):
-            #print(f'{index} is a dataset')
+            # print(f'{index} is a dataset')
             error_message = validate_dimensions(this_dim, main_shape[index])
 
             # All these checks should live in a helper function for cleaniness
 
-            if len(error_message)>0:
-                print('Dimension {} has the following error_message:\n'.format(index), error_message)
+            if len(error_message) > 0:
+                print(
+                    "Dimension {} has the following error_message:\n".format(index),
+                    error_message,
+                )
 
             else:
-                if this_dim.name not in dim_names: ## names must be unique
+                if this_dim.name not in dim_names:  ## names must be unique
                     dim_names.append(this_dim.name)
                 else:
-                    raise TypeError('All dimension names must be unique, found {} twice'.format(this_dim.name))
+                    raise TypeError(
+                        "All dimension names must be unique, found {} twice".format(
+                            this_dim.name
+                        )
+                    )
 
                 # are all datasets in the same file?
                 if this_dim.file != h5_parent_group.file:
                     this_dim = copy_dataset(this_dim, h5_parent_group, verbose=False)
 
         elif isinstance(this_dim, Dimension):
-            #print('Dimension')
-            #print(len(this_dim.values))
+            # print('Dimension')
+            # print(len(this_dim.values))
             # is the shape matching with the main dataset?
             dimensions_correct.append(len(this_dim.values) == dim_exp_size)
             # Is there a HDF5 dataset with the same name already in the provided group where this dataset will be created?
-            if  this_dim.name in h5_parent_group:
+            if this_dim.name in h5_parent_group:
                 # check if this object with the same name is a dataset and if it satisfies the above tests
                 if isinstance(h5_parent_group[this_dim.name], h5py.Dataset):
-                    print('needs more checking')
+                    print("needs more checking")
                     dimensions_correct[-1] = False
                 else:
                     dimensions_correct[-1] = True
@@ -270,14 +334,16 @@ def validate_main_dimensions(main_shape, dim_dict, h5_parent_group ):
             else:
                 dimensions_correct[-1] = False
         else:
-            raise TypeError('Values of dim_dict should either be h5py.Dataset objects or Dimension. '
-                            'Object at index: {} was of type: {}'.format(index, type(index)))
+            raise TypeError(
+                "Values of dim_dict should either be h5py.Dataset objects or Dimension. "
+                "Object at index: {} was of type: {}".format(index, type(index))
+            )
 
         for dim in which_h5_file:
             if which_h5_file[dim] != h5_parent_group.file.filename:
-                print('need to copy dimension', dim)
+                print("need to copy dimension", dim)
         for i, dim_name in enumerate(dim_names[:-1]):
-            if dim_name in  dim_names[i+1:]:
-                print(dim_name, ' is not unique')
+            if dim_name in dim_names[i + 1 :]:
+                print(dim_name, " is not unique")
 
     return dimensions_correct

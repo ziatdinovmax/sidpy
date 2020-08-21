@@ -54,8 +54,8 @@ import h5py
 # Creating a HDF5 files using h5py is similar to the process of creating a conventional text file using python. The File
 # class of h5py requires the path for the desired file with a .h5, .hdf5, or similar extension.
 
-h5_path = 'hdf5_primer.h5'
-h5_file = h5py.File('hdf5_primer.h5')
+h5_path = "hdf5_primer.h5"
+h5_file = h5py.File("hdf5_primer.h5")
 print(h5_file)
 
 ########################################################################################################################
@@ -69,7 +69,7 @@ print(h5_file)
 # We can use the ``create_group()`` function on an existing object such as the open file handle (``h5_file``) to create a
 # group:
 
-h5_group_1 = h5_file.create_group('Group_1')
+h5_group_1 = h5_file.create_group("Group_1")
 print(h5_group_1)
 
 ########################################################################################################################
@@ -90,8 +90,8 @@ print(h5_group_1.name)
 # we would need to call the ``create_group()`` function on the h5_group_1 object and not the h5_file object. Doing the
 # latter would result in groups created under the file at the same level as ``Group_1`` instead of inside ``Group_1``.
 
-h5_group_1_1 = h5_group_1.create_group('Group_1_1')
-h5_group_1_2 = h5_group_1.create_group('Group_1_2')
+h5_group_1_1 = h5_group_1.create_group("Group_1_1")
+h5_group_1_2 = h5_group_1.create_group("Group_1_2")
 
 ########################################################################################################################
 # Now, when we print h5_group, it will reveal that we have two objects - the two groups we just created:
@@ -135,10 +135,10 @@ print(h5_group_1_1.parent == h5_group_1)
 # In the same way, we can also access HDF5 objects either through ``relative paths``, or ``absolute paths``. Here are a few
 # ways one could get to the group ``Group_1_2``:
 
-print(h5_file['/Group_1/Group_1_2'])
-print(h5_group_1['Group_1_2'])
-print(h5_group_1_1.parent['Group_1_2'])
-print(h5_group_1_1.parent.parent['Group_1/Group_1_2'])
+print(h5_file["/Group_1/Group_1_2"])
+print(h5_group_1["Group_1_2"])
+print(h5_group_1_1.parent["Group_1_2"])
+print(h5_group_1_1.parent.parent["Group_1/Group_1_2"])
 
 ########################################################################################################################
 # Now let us look at how one can iterate through the datasets and Groups present within a HDF5 group:
@@ -159,8 +159,8 @@ for item in h5_group_1:
 # Let us see how we would then try to find the object for the group named 'Group_1_2':
 
 for key, value in h5_group_1.items():
-    if key == 'Group_1_2':
-        print('Found the desired object: {}'.format(value))
+    if key == "Group_1_2":
+        print("Found the desired object: {}".format(value))
 
 ########################################################################################################################
 # Datasets
@@ -184,9 +184,9 @@ for key, value in h5_group_1.items():
 # stored can significantly affect the size of the dataset and the file. Therefore, we recommend purposefully specifying
 # the data-type (via the ``dtype`` keyword argument) during creation.
 
-h5_simple_dataset = h5_group_1.create_dataset('Simple_Dataset',
-                                              data=np.random.rand(256, 256),
-                                              dtype=np.float32)
+h5_simple_dataset = h5_group_1.create_dataset(
+    "Simple_Dataset", data=np.random.rand(256, 256), dtype=np.float32
+)
 print(h5_simple_dataset)
 
 ########################################################################################################################
@@ -200,8 +200,8 @@ print(h5_simple_dataset[29, 167])
 ########################################################################################################################
 # Again, just as before, we can address this dataset in many ways:
 
-print(h5_group_1['Simple_Dataset'])
-print(h5_file['/Group_1/Simple_Dataset'])
+print(h5_group_1["Simple_Dataset"])
+print(h5_file["/Group_1/Simple_Dataset"])
 
 ########################################################################################################################
 # Creating (potentially large) empty datasets:
@@ -214,9 +214,9 @@ print(h5_file['/Group_1/Simple_Dataset'])
 # For example, assume that we have 128 files each having 1D spectra (amplitude + phase or complex value) of length 1024.
 # Here is how one may create the HDF5 dataset to hold the data:
 
-h5_empty_dataset = h5_group_1.create_dataset('Empty_Dataset',
-                                             shape=(128, 1024),
-                                             dtype=np.complex64)
+h5_empty_dataset = h5_group_1.create_dataset(
+    "Empty_Dataset", shape=(128, 1024), dtype=np.complex64
+)
 print(h5_empty_dataset)
 
 ########################################################################################################################
@@ -256,10 +256,9 @@ h5_file.flush()
 # In such cases, it is easier just to create datasets that can expand one pixel at a time. For this specific example,
 # one may want to create a 2D dataset of shape (1, 128) that could grow up to a maxshape of (256, 128) as shown below:
 
-h5_expandable_dset = h5_group_1.create_dataset('Expandable_Dataset',
-                                               shape=(1, 128),
-                                               maxshape=(256, 128),
-                                               dtype=np.float32)
+h5_expandable_dset = h5_group_1.create_dataset(
+    "Expandable_Dataset", shape=(1, 128), maxshape=(256, 128), dtype=np.float32
+)
 print(h5_expandable_dset)
 
 ########################################################################################################################
@@ -296,9 +295,10 @@ print(h5_expandable_dset)
 # Storing attributes in objects is identical to appending to python dictionaries. Lets store some simple attributes in
 # the group named 'Group_1':
 
-h5_simple_dataset.attrs['single_num'] = 36.23
-h5_simple_dataset.attrs.update({'list_of_nums': [1, 6.534, -65],
-                               'single_string': 'hello'})
+h5_simple_dataset.attrs["single_num"] = 36.23
+h5_simple_dataset.attrs.update(
+    {"list_of_nums": [1, 6.534, -65], "single_string": "hello"}
+)
 
 ########################################################################################################################
 # Reading
@@ -306,14 +306,18 @@ h5_simple_dataset.attrs.update({'list_of_nums': [1, 6.534, -65],
 # We would read the attributes just like we would treat a dictionary in python:
 
 for key, val in h5_simple_dataset.attrs.items():
-    print('{} : {}'.format(key, val))
+    print("{} : {}".format(key, val))
 
 ########################################################################################################################
 # Lets read the attributes one by one and verify that we read what we wrote:
 
-print('single_num: {}'.format(h5_simple_dataset.attrs['single_num'] == 36.23))
-print('list_of_nums: {}'.format(np.all(h5_simple_dataset.attrs['list_of_nums'] == [1, 6.534, -65])))
-print('single_string: {}'.format(h5_simple_dataset.attrs['single_string'] == 'hello'))
+print("single_num: {}".format(h5_simple_dataset.attrs["single_num"] == 36.23))
+print(
+    "list_of_nums: {}".format(
+        np.all(h5_simple_dataset.attrs["list_of_nums"] == [1, 6.534, -65])
+    )
+)
+print("single_string: {}".format(h5_simple_dataset.attrs["single_string"] == "hello"))
 
 ########################################################################################################################
 # Caveat
@@ -327,12 +331,16 @@ print('single_string: {}'.format(h5_simple_dataset.attrs['single_string'] == 'he
 #
 # Instead, we recommend writing lists of strings by casting them as numpy arrays:
 
-h5_simple_dataset.attrs['list_of_strings'] = np.array(['a', 'bc', 'def'], dtype='S')
+h5_simple_dataset.attrs["list_of_strings"] = np.array(["a", "bc", "def"], dtype="S")
 
 ########################################################################################################################
 # In the same way, reading attributes that are lists of strings is also not straightforward:
 
-print('list_of_strings: {}'.format(h5_simple_dataset.attrs['list_of_strings'] == ['a', 'bc', 'def']))
+print(
+    "list_of_strings: {}".format(
+        h5_simple_dataset.attrs["list_of_strings"] == ["a", "bc", "def"]
+    )
+)
 
 ########################################################################################################################
 # A similar decoding step needs to be taken to extract the actual string values.
@@ -348,14 +356,14 @@ print('list_of_strings: {}'.format(h5_simple_dataset.attrs['list_of_strings'] ==
 # Besides strings and numbers, we tend to store references to datasets as attributes. Here is how one would link the
 # empty dataset to the simple dataset:
 
-h5_simple_dataset.attrs['Dataset_Reference'] = h5_empty_dataset.ref
-print(h5_simple_dataset.attrs['Dataset_Reference'])
+h5_simple_dataset.attrs["Dataset_Reference"] = h5_empty_dataset.ref
+print(h5_simple_dataset.attrs["Dataset_Reference"])
 
 ########################################################################################################################
 # Here is how one would get a handle to the actual dataset from the reference:
 
 # Read the attribute how you normally would
-h5_ref = h5_simple_dataset.attrs['Dataset_Reference']
+h5_ref = h5_simple_dataset.attrs["Dataset_Reference"]
 # Get the handle to the actual dataset:
 h5_dset = h5_file[h5_ref]
 # Check if this object is indeed the empty dataset:

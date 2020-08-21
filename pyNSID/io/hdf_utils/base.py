@@ -34,14 +34,14 @@ def print_tree(parent, rel_paths=False, main_dsets_only=False):
         False - prints all dataset and group objects
     """
     if not isinstance(parent, (h5py.File, h5py.Group)):
-        raise TypeError('Provided object is not a h5py.File or h5py.Group '
-                        'object')
+        raise TypeError("Provided object is not a h5py.File or h5py.Group " "object")
 
     def __print(name, obj):
         show = True
         if main_dsets_only:
             show = False
             from .simple import check_if_main
+
             if check_if_main(obj) or isinstance(obj, h5py.Group):
                 show = True
         if not show:
@@ -50,12 +50,12 @@ def print_tree(parent, rel_paths=False, main_dsets_only=False):
         if rel_paths:
             print(name)
         else:
-            levels = name.count('/')
-            curr_name = name[name.rfind('/') + 1:]
+            levels = name.count("/")
+            curr_name = name[name.rfind("/") + 1 :]
 
-            print(levels * '  ' + '├ ' + curr_name)
+            print(levels * "  " + "├ " + curr_name)
             if isinstance(obj, h5py.Group):
-                print((levels + 1) * '  ' + len(curr_name) * '-')
+                print((levels + 1) * "  " + len(curr_name) * "-")
 
     print(parent.name)
     parent.visititems(__print)
@@ -104,4 +104,4 @@ def write_book_keeping_attrs(h5_obj):
 
     """
     hut.write_book_keeping_attrs(h5_obj)
-    hut.write_simple_attrs(h5_obj, {'pyNSID_version': py_nsid_version})
+    hut.write_simple_attrs(h5_obj, {"pyNSID_version": py_nsid_version})

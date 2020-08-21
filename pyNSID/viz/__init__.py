@@ -12,4 +12,4 @@ Submodules
 """
 from . import plot_nsid
 
-__all__ = ['plot_nsid']
+__all__ = ["plot_nsid"]
