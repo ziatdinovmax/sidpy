@@ -166,6 +166,12 @@ class TestEq(unittest.TestCase):
             # assertion fails.
         a = Dimension(np.arange(5), "X", "Bias", "mV")
         b = Dimension(np.arange(5), "X", "Bias", "mV")
+        self.assertFalse(a is None)
+        #self.assertFalse(a == None)
+        #self.assertFalse(a == 12)
+        self.assertFalse(a.units is None)
+        #self.assertFalse(a.units == None)
+        self.assertFalse(a.units == 12)
         self.assertEqual(a, b)
         self.assertEqual(b, a)
         self.assertTrue(a.units == b.units)
