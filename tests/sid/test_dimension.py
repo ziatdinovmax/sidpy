@@ -95,6 +95,7 @@ class TestDimension(unittest.TestCase):
         self.assertTrue(dim_1.units != dim_2.units)
         self.assertFalse(all(np.equal(dim_1.values, dim_2.values)))
         self.assertTrue(dim_1 != dim_3)
+        
 
 
     def test_inequality_req_inputs(self):
@@ -156,6 +157,33 @@ class TestDimension(unittest.TestCase):
             _ = Dimension(5, "x", dimension_type=dim_type)
         self.assertTrue(expected_wrn[0] in str(w[0].message))
         self.assertTrue(expected_wrn[1] in str(w[1].message))
+
+
+class TestEq(unittest.TestCase):
+
+    def test_equal(self):
+            # assertEqual first, because it will have a good message if the
+            # assertion fails.
+        a = Dimension(np.arange(5), "X", "Bias", "mV")
+        b = Dimension(np.arange(5), "X", "Bias", "mV")
+        self.assertEqual(a, b)
+        self.assertEqual(b, a)
+        self.assertTrue(a.units == b.units)
+        self.assertTrue(b.units == a.units)
+        self.assertFalse(a.units != b.units)
+        self.assertFalse(b.units != a.units)
+
+    def test_notequal(self):
+        # assertNotEqual first, because it will have a good message if the
+        # assertion fails.
+        a = Dimension(np.arange(5), "X", "Bias", "mV")
+        b = Dimension(np.arange(5) + 1, "Y", "Length", "nm")
+        #self.assertNotEqual(a, b)
+        #self.assertNotEqual(b, a)
+        self.assertFalse(a.units == b.units)
+        self.assertFalse(b.units == a.units)
+        self.assertTrue(a.units != b.units)
+        self.assertTrue(b.units != a.units)
 
 
 if __name__ == '__main__':
