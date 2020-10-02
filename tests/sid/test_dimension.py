@@ -90,11 +90,11 @@ class TestDimension(unittest.TestCase):
         dim_1 = Dimension(np.arange(5), "X", "Bias", "mV")
         dim_2 = Dimension(np.arange(5) + 1, "Y", "Length", "nm")
         dim_3 = Dimension(10)
-        self.assertFalse(dim_1.name == dim_2.name)
-        self.assertFalse(dim_1.quantity == dim_2.quantity)
-        self.assertFalse(dim_1.units == dim_2.units)
+        self.assertTrue(dim_1.name != dim_2.name)
+        self.assertTrue(dim_1.quantity != dim_2.quantity)
+        self.assertTrue(dim_1.units != dim_2.units)
         self.assertFalse(all(np.equal(dim_1.values, dim_2.values)))
-        self.assertFalse(dim_1 == dim_3)
+        self.assertTrue(dim_1 != dim_3)
 
 
     def test_inequality_req_inputs(self):
