@@ -80,7 +80,6 @@ class TestDimension(unittest.TestCase):
 
         self.assertTrue(Dimension([0, 1, 2, 3], name) == Dimension([0, 1, 2, 3], name))
         self.assertFalse(Dimension([0, 1, 2, 3], 'fdfd') == Dimension([0, 1, 2, 3], name))
-
         self.assertFalse(Dimension([0, 1, 2], name) == Dimension([0, 1, 2, 3], name))
 
     def test_dimensionality(self):
