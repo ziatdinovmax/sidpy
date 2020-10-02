@@ -75,6 +75,14 @@ class TestDimension(unittest.TestCase):
         self.assertEqual(actual, expected)
 
 
+    def test_inequality_req_inputs(self):
+        name = 'Bias'
+
+        self.assertTrue(Dimension([0, 1, 2, 3], name) == Dimension([0, 1, 2, 3], name))
+        self.assertFalse(Dimension([0, 1, 2, 3], 'fdfd') == Dimension([0, 1, 2, 3], name))
+
+        self.assertFalse(Dimension([0, 1, 2], name) == Dimension([0, 1, 2, 3], name))
+
     def test_dimensionality(self):
         vals = np.ones((2, 2))
         expected = 'Dimension can only be 1 dimensional'
