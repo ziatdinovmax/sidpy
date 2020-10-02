@@ -77,10 +77,15 @@ class TestDimension(unittest.TestCase):
 
     def test_inequality_req_inputs(self):
         name = 'Bias'
+        units='nm'
 
         self.assertTrue(Dimension([0, 1, 2, 3], name) == Dimension([0, 1, 2, 3], name))
         self.assertFalse(Dimension([0, 1, 2, 3], 'fdfd') == Dimension([0, 1, 2, 3], name))
         self.assertFalse(Dimension([0, 1, 2], name) == Dimension([0, 1, 2, 3], name))
+
+        self.assertTrue(Dimension([0, 1, 2, 3], name, units) == Dimension([0, 1, 2, 3], name, units))
+        self.assertFalse(Dimension([0, 1, 2, 3], name, 'pm') == Dimension([0, 1, 2, 3], name, units))
+        self.assertFalse(Dimension([0, 1, 2], name, units) == Dimension([0, 1, 2, 3], name, units))
 
     def test_dimensionality(self):
         vals = np.ones((2, 2))
