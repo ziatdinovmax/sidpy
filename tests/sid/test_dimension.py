@@ -83,13 +83,18 @@ class TestDimension(unittest.TestCase):
         self.assertFalse(Dimension(5, 'Y') == Dimension(5, name))
         self.assertFalse(Dimension(4, name) == Dimension(5, name))
 
-        self.assertTrue(Dimension(5, units=units) == Dimension(5, units=units))
-        self.assertFalse(Dimension(5, units='pm') == Dimension(5, units=units))
+        self.assertTrue(
+            Dimension(5, units=units) == Dimension(5, units=units))
+        self.assertFalse(
+            Dimension(5, units='pm') == Dimension(5, units=units))
 
-        self.assertTrue(Dimension(5, quantity=quantity) == Dimension(5, quantity=quantity))
-        self.assertFalse(Dimension(5, quantity='Bias') == Dimension(5, quantity=quantity))
+        self.assertTrue(
+            Dimension(5, quantity=quantity) == Dimension(5, quantity=quantity))
+        self.assertFalse(
+            Dimension(5, quantity='Bias') == Dimension(5, quantity=quantity))
 
-        self.assertFalse(Dimension(np.arange(5)) == Dimension(np.arange(5) + 1))
+        self.assertFalse(
+            Dimension(np.arange(5)) == Dimension(np.arange(5) + 1))
 
     def test_dimensionality(self):
         vals = np.ones((2, 2))
