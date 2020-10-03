@@ -74,18 +74,20 @@ class TestDimension(unittest.TestCase):
         expected = '{}:  {} ({}) of size {}'.format(name, quantity, units, values.shape)
         self.assertEqual(actual, expected)
 
-
     def test_inequality_req_inputs(self):
-        name = 'Bias'
-        units='nm'
+        name = 'X'
+        quantity = "Length"
+        units = 'nm'
 
-        self.assertTrue(Dimension([0, 1, 2, 3], name) == Dimension([0, 1, 2, 3], name))
-        self.assertFalse(Dimension([0, 1, 2, 3], 'fdfd') == Dimension([0, 1, 2, 3], name))
-        self.assertFalse(Dimension([0, 1, 2], name) == Dimension([0, 1, 2, 3], name))
+        self.assertTrue(Dimension(5, name) == Dimension(5, name))
+        self.assertFalse(Dimension(5, 'Y') == Dimension(5, name))
+        self.assertFalse(Dimension(4, name) == Dimension(5, name))
 
-        self.assertTrue(Dimension([0, 1, 2, 3], name, units) == Dimension([0, 1, 2, 3], name, units))
-        self.assertFalse(Dimension([0, 1, 2, 3], name, 'pm') == Dimension([0, 1, 2, 3], name, units))
-        self.assertFalse(Dimension([0, 1, 2], name, units) == Dimension([0, 1, 2, 3], name, units))
+        self.assertTrue(Dimension([5, units=units) == Dimension(5, units=units))
+        self.assertFalse(Dimension(5, units='pm') == Dimension(5, units=units))
+
+        self.assertTrue(Dimension([5, quantity=quantity) == Dimension(5, quantity=quantity))
+        self.assertFalse(Dimension(5, quantity='Bias') == Dimension(5, quantity=quantity))
 
     def test_dimensionality(self):
         vals = np.ones((2, 2))
