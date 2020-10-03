@@ -89,6 +89,8 @@ class TestDimension(unittest.TestCase):
         self.assertTrue(Dimension(5, quantity=quantity) == Dimension(5, quantity=quantity))
         self.assertFalse(Dimension(5, quantity='Bias') == Dimension(5, quantity=quantity))
 
+        self.assertFalse(Dimension(np.arange(5)) == Dimension(np.arange(5) + 1))
+
     def test_dimensionality(self):
         vals = np.ones((2, 2))
         expected = 'Dimension can only be 1 dimensional'
