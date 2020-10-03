@@ -1,0 +1,1305 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>dask.base &mdash; sidpy 0.0.3 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> sidpy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">SIDpy</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../external_guides.html">Tutorials on Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contribute.html">Guidelines for Contribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../matlab.html">Upgrading from Matlab</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contact.html">Contact us</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/sidpy.html">sidpy</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../notebooks/00_basic_usage/index.html">Basic usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../notebooks/01_parallel_computing/index.html">Parallel computing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../notebooks/02_visualization/index.html">Visualization</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">sidpy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>dask.base</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for dask.base</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Iterator</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">hashlib</span> <span class="kn">import</span> <span class="n">md5</span>
+<span class="kn">from</span> <span class="nn">operator</span> <span class="kn">import</span> <span class="n">getitem</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+<span class="kn">from</span> <span class="nn">distutils.version</span> <span class="kn">import</span> <span class="n">LooseVersion</span>
+
+<span class="kn">from</span> <span class="nn">tlz</span> <span class="kn">import</span> <span class="n">merge</span><span class="p">,</span> <span class="n">groupby</span><span class="p">,</span> <span class="n">curry</span><span class="p">,</span> <span class="n">identity</span>
+<span class="kn">from</span> <span class="nn">tlz.functoolz</span> <span class="kn">import</span> <span class="n">Compose</span>
+
+<span class="kn">from</span> <span class="nn">.compatibility</span> <span class="kn">import</span> <span class="n">is_dataclass</span><span class="p">,</span> <span class="n">dataclass_fields</span>
+<span class="kn">from</span> <span class="nn">.context</span> <span class="kn">import</span> <span class="n">thread_state</span>
+<span class="kn">from</span> <span class="nn">.core</span> <span class="kn">import</span> <span class="n">flatten</span><span class="p">,</span> <span class="n">quote</span><span class="p">,</span> <span class="n">get</span> <span class="k">as</span> <span class="n">simple_get</span><span class="p">,</span> <span class="n">literal</span>
+<span class="kn">from</span> <span class="nn">.hashing</span> <span class="kn">import</span> <span class="n">hash_buffer_hex</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">Dispatch</span><span class="p">,</span> <span class="n">ensure_dict</span><span class="p">,</span> <span class="n">apply</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">config</span><span class="p">,</span> <span class="n">local</span><span class="p">,</span> <span class="n">threaded</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">&quot;DaskMethodsMixin&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;is_dask_collection&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;compute&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;persist&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;optimize&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;visualize&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;tokenize&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;normalize_token&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">is_dask_collection</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns ``True`` if ``x`` is a dask collection&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">__dask_graph__</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">class</span> <span class="nc">DaskMethodsMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A mixin adding standard dask collection methods&quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">visualize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;mydask&quot;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">optimize_graph</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Render the computation of this object&#39;s task graph using graphviz.</span>
+
+<span class="sd">        Requires ``graphviz`` to be installed.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filename : str or None, optional</span>
+<span class="sd">            The name of the file to write to disk. If the provided `filename`</span>
+<span class="sd">            doesn&#39;t include an extension, &#39;.png&#39; will be used by default.</span>
+<span class="sd">            If `filename` is None, no file will be written, and we communicate</span>
+<span class="sd">            with dot using only pipes.</span>
+<span class="sd">        format : {&#39;png&#39;, &#39;pdf&#39;, &#39;dot&#39;, &#39;svg&#39;, &#39;jpeg&#39;, &#39;jpg&#39;}, optional</span>
+<span class="sd">            Format in which to write output file.  Default is &#39;png&#39;.</span>
+<span class="sd">        optimize_graph : bool, optional</span>
+<span class="sd">            If True, the graph is optimized before rendering.  Otherwise,</span>
+<span class="sd">            the graph is displayed as is. Default is False.</span>
+<span class="sd">        color: {None, &#39;order&#39;}, optional</span>
+<span class="sd">            Options to color nodes.  Provide ``cmap=`` keyword for additional</span>
+<span class="sd">            colormap</span>
+<span class="sd">        **kwargs</span>
+<span class="sd">           Additional keyword arguments to forward to ``to_graphviz``.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; x.visualize(filename=&#39;dask.pdf&#39;)  # doctest: +SKIP</span>
+<span class="sd">        &gt;&gt;&gt; x.visualize(filename=&#39;dask.pdf&#39;, color=&#39;order&#39;)  # doctest: +SKIP</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        result : IPython.diplay.Image, IPython.display.SVG, or None</span>
+<span class="sd">            See dask.dot.dot_graph for more information.</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        dask.base.visualize</span>
+<span class="sd">        dask.dot.dot_graph</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        For more information on optimization see here:</span>
+
+<span class="sd">        https://docs.dask.org/en/latest/optimize.html</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">visualize</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span>
+            <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">,</span>
+            <span class="n">optimize_graph</span><span class="o">=</span><span class="n">optimize_graph</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">persist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Persist this dask collection into memory</span>
+
+<span class="sd">        This turns a lazy Dask collection into a Dask collection with the same</span>
+<span class="sd">        metadata, but now with the results fully computed or actively computing</span>
+<span class="sd">        in the background.</span>
+
+<span class="sd">        The action of function differs significantly depending on the active</span>
+<span class="sd">        task scheduler.  If the task scheduler supports asynchronous computing,</span>
+<span class="sd">        such as is the case of the dask.distributed scheduler, then persist</span>
+<span class="sd">        will return *immediately* and the return value&#39;s task graph will</span>
+<span class="sd">        contain Dask Future objects.  However if the task scheduler only</span>
+<span class="sd">        supports blocking computation then the call to persist will *block*</span>
+<span class="sd">        and the return value&#39;s task graph will contain concrete Python results.</span>
+
+<span class="sd">        This function is particularly useful when using distributed systems,</span>
+<span class="sd">        because the results will be kept in distributed memory, rather than</span>
+<span class="sd">        returned to the local process as with compute.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scheduler : string, optional</span>
+<span class="sd">            Which scheduler to use like &quot;threads&quot;, &quot;synchronous&quot; or &quot;processes&quot;.</span>
+<span class="sd">            If not provided, the default is to check the global settings first,</span>
+<span class="sd">            and then fall back to the collection defaults.</span>
+<span class="sd">        optimize_graph : bool, optional</span>
+<span class="sd">            If True [default], the graph is optimized before computation.</span>
+<span class="sd">            Otherwise the graph is run as is. This can be useful for debugging.</span>
+<span class="sd">        **kwargs</span>
+<span class="sd">            Extra keywords to forward to the scheduler function.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        New dask collections backed by in-memory data</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        dask.base.persist</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="p">(</span><span class="n">result</span><span class="p">,)</span> <span class="o">=</span> <span class="n">persist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">traverse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute this dask collection</span>
+
+<span class="sd">        This turns a lazy Dask collection into its in-memory equivalent.</span>
+<span class="sd">        For example a Dask array turns into a NumPy array and a Dask dataframe</span>
+<span class="sd">        turns into a Pandas dataframe.  The entire dataset must fit into memory</span>
+<span class="sd">        before calling this operation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scheduler : string, optional</span>
+<span class="sd">            Which scheduler to use like &quot;threads&quot;, &quot;synchronous&quot; or &quot;processes&quot;.</span>
+<span class="sd">            If not provided, the default is to check the global settings first,</span>
+<span class="sd">            and then fall back to the collection defaults.</span>
+<span class="sd">        optimize_graph : bool, optional</span>
+<span class="sd">            If True [default], the graph is optimized before computation.</span>
+<span class="sd">            Otherwise the graph is run as is. This can be useful for debugging.</span>
+<span class="sd">        kwargs</span>
+<span class="sd">            Extra keywords to forward to the scheduler function.</span>
+
+<span class="sd">        See Also</span>
+<span class="sd">        --------</span>
+<span class="sd">        dask.base.compute</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="p">(</span><span class="n">result</span><span class="p">,)</span> <span class="o">=</span> <span class="n">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">traverse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span> <span class="fm">__await__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">distributed</span> <span class="kn">import</span> <span class="n">wait</span><span class="p">,</span> <span class="n">futures_of</span>
+        <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+                <span class="s2">&quot;Using async/await with dask requires the `distributed` package&quot;</span>
+            <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+        <span class="kn">from</span> <span class="nn">tornado</span> <span class="kn">import</span> <span class="n">gen</span>
+
+        <span class="nd">@gen</span><span class="o">.</span><span class="n">coroutine</span>
+        <span class="k">def</span> <span class="nf">f</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">futures_of</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="n">wait</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">gen</span><span class="o">.</span><span class="n">Return</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">f</span><span class="p">()</span><span class="o">.</span><span class="fm">__await__</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">compute_as_if_collection</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dsk</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">get</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute a graph as if it were of type cls.</span>
+
+<span class="sd">    Allows for applying the same optimizations and default scheduler.&quot;&quot;&quot;</span>
+    <span class="n">schedule</span> <span class="o">=</span> <span class="n">get_scheduler</span><span class="p">(</span><span class="n">scheduler</span><span class="o">=</span><span class="n">scheduler</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="bp">cls</span><span class="p">,</span> <span class="n">get</span><span class="o">=</span><span class="n">get</span><span class="p">)</span>
+    <span class="n">dsk2</span> <span class="o">=</span> <span class="n">optimization_function</span><span class="p">(</span><span class="bp">cls</span><span class="p">)(</span><span class="n">ensure_dict</span><span class="p">(</span><span class="n">dsk</span><span class="p">),</span> <span class="n">keys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">schedule</span><span class="p">(</span><span class="n">dsk2</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">dont_optimize</span><span class="p">(</span><span class="n">dsk</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">dsk</span>
+
+
+<span class="k">def</span> <span class="nf">optimization_function</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot;__dask_optimize__&quot;</span><span class="p">,</span> <span class="n">dont_optimize</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">collections_to_dsk</span><span class="p">(</span><span class="n">collections</span><span class="p">,</span> <span class="n">optimize_graph</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert many collections into a single dask graph, after optimization</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">optimizations</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;optimizations&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;optimizations&quot;</span><span class="p">,</span> <span class="p">[])</span>
+
+    <span class="k">if</span> <span class="n">optimize_graph</span><span class="p">:</span>
+        <span class="n">groups</span> <span class="o">=</span> <span class="n">groupby</span><span class="p">(</span><span class="n">optimization_function</span><span class="p">,</span> <span class="n">collections</span><span class="p">)</span>
+
+        <span class="n">_opt_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">opt</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">groups</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">dsk</span><span class="p">,</span> <span class="n">keys</span> <span class="o">=</span> <span class="n">_extract_graph_and_keys</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="n">groups</span><span class="p">[</span><span class="n">opt</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">dsk</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span>
+            <span class="n">_opt</span> <span class="o">=</span> <span class="n">opt</span><span class="p">(</span><span class="n">dsk</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">_opt_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_opt</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="n">optimizations</span><span class="p">:</span>
+            <span class="n">_opt_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">dsk</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span> <span class="ow">in</span> <span class="n">groups</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">_opt</span> <span class="o">=</span> <span class="n">opt</span><span class="p">(</span><span class="n">dsk</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="n">group</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">_opt</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span>
+                <span class="n">_opt_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_opt</span><span class="p">)</span>
+            <span class="n">groups</span> <span class="o">=</span> <span class="n">group</span>
+
+        <span class="n">dsk</span> <span class="o">=</span> <span class="n">merge</span><span class="p">(</span>
+            <span class="o">*</span><span class="nb">map</span><span class="p">(</span>
+                <span class="n">ensure_dict</span><span class="p">,</span>
+                <span class="n">_opt_list</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dsk</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_extract_graph_and_keys</span><span class="p">(</span><span class="n">collections</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dsk</span>
+
+
+<span class="k">def</span> <span class="nf">_extract_graph_and_keys</span><span class="p">(</span><span class="n">vals</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Given a list of dask vals, return a single graph and a list of keys such</span>
+<span class="sd">    that ``get(dsk, keys)`` is equivalent to ``[v.compute() for v in vals]``.&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">.highlevelgraph</span> <span class="kn">import</span> <span class="n">HighLevelGraph</span>
+
+    <span class="n">graphs</span><span class="p">,</span> <span class="n">keys</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+        <span class="n">graphs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">__dask_graph__</span><span class="p">())</span>
+        <span class="n">keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">__dask_keys__</span><span class="p">())</span>
+
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">HighLevelGraph</span><span class="p">)</span> <span class="k">for</span> <span class="n">graph</span> <span class="ow">in</span> <span class="n">graphs</span><span class="p">):</span>
+        <span class="n">graph</span> <span class="o">=</span> <span class="n">HighLevelGraph</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="o">*</span><span class="n">graphs</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">graph</span> <span class="o">=</span> <span class="n">merge</span><span class="p">(</span><span class="o">*</span><span class="nb">map</span><span class="p">(</span><span class="n">ensure_dict</span><span class="p">,</span> <span class="n">graphs</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">graph</span><span class="p">,</span> <span class="n">keys</span>
+
+
+<span class="k">def</span> <span class="nf">unpack_collections</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Extract collections in preparation for compute/persist/etc...</span>
+
+<span class="sd">    Intended use is to find all collections in a set of (possibly nested)</span>
+<span class="sd">    python objects, do something to them (compute, etc...), then repackage them</span>
+<span class="sd">    in equivalent python objects.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    *args</span>
+<span class="sd">        Any number of objects. If it is a dask collection, it&#39;s extracted and</span>
+<span class="sd">        added to the list of collections returned. By default, python builtin</span>
+<span class="sd">        collections are also traversed to look for dask collections (for more</span>
+<span class="sd">        information see the ``traverse`` keyword).</span>
+<span class="sd">    traverse : bool, optional</span>
+<span class="sd">        If True (default), builtin python collections are traversed looking for</span>
+<span class="sd">        any dask collections they might contain.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    collections : list</span>
+<span class="sd">        A list of all dask collections contained in ``args``</span>
+<span class="sd">    repack : callable</span>
+<span class="sd">        A function to call on the transformed collections to repackage them as</span>
+<span class="sd">        they were in the original ``args``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">traverse</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;traverse&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">collections</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">repack_dsk</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">collections_token</span> <span class="o">=</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span>
+
+    <span class="k">def</span> <span class="nf">_unpack</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">is_dask_collection</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
+            <span class="n">tok</span> <span class="o">=</span> <span class="n">tokenize</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">tok</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">repack_dsk</span><span class="p">:</span>
+                <span class="n">repack_dsk</span><span class="p">[</span><span class="n">tok</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">getitem</span><span class="p">,</span> <span class="n">collections_token</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">collections</span><span class="p">))</span>
+                <span class="n">collections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">tok</span>
+
+        <span class="n">tok</span> <span class="o">=</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">traverse</span><span class="p">:</span>
+            <span class="n">tsk</span> <span class="o">=</span> <span class="n">quote</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Treat iterators like lists</span>
+            <span class="n">typ</span> <span class="o">=</span> <span class="nb">list</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">)</span> <span class="k">else</span> <span class="nb">type</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">typ</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">set</span><span class="p">):</span>
+                <span class="n">tsk</span> <span class="o">=</span> <span class="p">(</span><span class="n">typ</span><span class="p">,</span> <span class="p">[</span><span class="n">_unpack</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">expr</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">typ</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">):</span>
+                <span class="n">tsk</span> <span class="o">=</span> <span class="p">(</span><span class="n">typ</span><span class="p">,</span> <span class="p">[[</span><span class="n">_unpack</span><span class="p">(</span><span class="n">k</span><span class="p">),</span> <span class="n">_unpack</span><span class="p">(</span><span class="n">v</span><span class="p">)]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">expr</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+            <span class="k">elif</span> <span class="n">is_dataclass</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+                <span class="n">tsk</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">apply</span><span class="p">,</span>
+                    <span class="n">typ</span><span class="p">,</span>
+                    <span class="p">(),</span>
+                    <span class="p">(</span>
+                        <span class="nb">dict</span><span class="p">,</span>
+                        <span class="p">[</span>
+                            <span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">_unpack</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">))]</span>
+                            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">dataclass_fields</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+                        <span class="p">],</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">expr</span>
+
+        <span class="n">repack_dsk</span><span class="p">[</span><span class="n">tok</span><span class="p">]</span> <span class="o">=</span> <span class="n">tsk</span>
+        <span class="k">return</span> <span class="n">tok</span>
+
+    <span class="n">out</span> <span class="o">=</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span>
+    <span class="n">repack_dsk</span><span class="p">[</span><span class="n">out</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="p">[</span><span class="n">_unpack</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">args</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">repack</span><span class="p">(</span><span class="n">results</span><span class="p">):</span>
+        <span class="n">dsk</span> <span class="o">=</span> <span class="n">repack_dsk</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">dsk</span><span class="p">[</span><span class="n">collections_token</span><span class="p">]</span> <span class="o">=</span> <span class="n">quote</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">simple_get</span><span class="p">(</span><span class="n">dsk</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">collections</span><span class="p">,</span> <span class="n">repack</span>
+
+
+<span class="k">def</span> <span class="nf">optimize</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Optimize several dask collections at once.</span>
+
+<span class="sd">    Returns equivalent dask collections that all share the same merged and</span>
+<span class="sd">    optimized underlying graph. This can be useful if converting multiple</span>
+<span class="sd">    collections to delayed objects, or to manually apply the optimizations at</span>
+<span class="sd">    strategic points.</span>
+
+<span class="sd">    Note that in most cases you shouldn&#39;t need to call this method directly.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    *args : objects</span>
+<span class="sd">        Any number of objects. If a dask object, its graph is optimized and</span>
+<span class="sd">        merged with all those of all other dask objects before returning an</span>
+<span class="sd">        equivalent dask collection. Non-dask arguments are passed through</span>
+<span class="sd">        unchanged.</span>
+<span class="sd">    traverse : bool, optional</span>
+<span class="sd">        By default dask traverses builtin python collections looking for dask</span>
+<span class="sd">        objects passed to ``optimize``. For large collections this can be</span>
+<span class="sd">        expensive. If none of the arguments contain any dask objects, set</span>
+<span class="sd">        ``traverse=False`` to avoid doing this traversal.</span>
+<span class="sd">    optimizations : list of callables, optional</span>
+<span class="sd">        Additional optimization passes to perform.</span>
+<span class="sd">    **kwargs</span>
+<span class="sd">        Extra keyword arguments to forward to the optimization passes.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import dask.array as da</span>
+<span class="sd">    &gt;&gt;&gt; a = da.arange(10, chunks=2).sum()</span>
+<span class="sd">    &gt;&gt;&gt; b = da.arange(10, chunks=2).mean()</span>
+<span class="sd">    &gt;&gt;&gt; a2, b2 = optimize(a, b)</span>
+
+<span class="sd">    &gt;&gt;&gt; a2.compute() == a.compute()</span>
+<span class="sd">    True</span>
+<span class="sd">    &gt;&gt;&gt; b2.compute() == b.compute()</span>
+<span class="sd">    True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">collections</span><span class="p">,</span> <span class="n">repack</span> <span class="o">=</span> <span class="n">unpack_collections</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">collections</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">args</span>
+
+    <span class="n">dsk</span> <span class="o">=</span> <span class="n">collections_to_dsk</span><span class="p">(</span><span class="n">collections</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="n">postpersists</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">collections</span><span class="p">:</span>
+        <span class="n">r</span><span class="p">,</span> <span class="n">s</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">__dask_postpersist__</span><span class="p">()</span>
+        <span class="n">postpersists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">(</span><span class="n">dsk</span><span class="p">,</span> <span class="o">*</span><span class="n">s</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">repack</span><span class="p">(</span><span class="n">postpersists</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute several dask collections at once.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    args : object</span>
+<span class="sd">        Any number of objects. If it is a dask object, it&#39;s computed and the</span>
+<span class="sd">        result is returned. By default, python builtin collections are also</span>
+<span class="sd">        traversed to look for dask objects (for more information see the</span>
+<span class="sd">        ``traverse`` keyword). Non-dask arguments are passed through unchanged.</span>
+<span class="sd">    traverse : bool, optional</span>
+<span class="sd">        By default dask traverses builtin python collections looking for dask</span>
+<span class="sd">        objects passed to ``compute``. For large collections this can be</span>
+<span class="sd">        expensive. If none of the arguments contain any dask objects, set</span>
+<span class="sd">        ``traverse=False`` to avoid doing this traversal.</span>
+<span class="sd">    scheduler : string, optional</span>
+<span class="sd">        Which scheduler to use like &quot;threads&quot;, &quot;synchronous&quot; or &quot;processes&quot;.</span>
+<span class="sd">        If not provided, the default is to check the global settings first,</span>
+<span class="sd">        and then fall back to the collection defaults.</span>
+<span class="sd">    optimize_graph : bool, optional</span>
+<span class="sd">        If True [default], the optimizations for each collection are applied</span>
+<span class="sd">        before computation. Otherwise the graph is run as is. This can be</span>
+<span class="sd">        useful for debugging.</span>
+<span class="sd">    kwargs</span>
+<span class="sd">        Extra keywords to forward to the scheduler function.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import dask.array as da</span>
+<span class="sd">    &gt;&gt;&gt; a = da.arange(10, chunks=2).sum()</span>
+<span class="sd">    &gt;&gt;&gt; b = da.arange(10, chunks=2).mean()</span>
+<span class="sd">    &gt;&gt;&gt; compute(a, b)</span>
+<span class="sd">    (45, 4.5)</span>
+
+<span class="sd">    By default, dask objects inside python collections will also be computed:</span>
+
+<span class="sd">    &gt;&gt;&gt; compute({&#39;a&#39;: a, &#39;b&#39;: b, &#39;c&#39;: 1})  # doctest: +SKIP</span>
+<span class="sd">    ({&#39;a&#39;: 45, &#39;b&#39;: 4.5, &#39;c&#39;: 1},)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">traverse</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;traverse&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">optimize_graph</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;optimize_graph&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">collections</span><span class="p">,</span> <span class="n">repack</span> <span class="o">=</span> <span class="n">unpack_collections</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">traverse</span><span class="o">=</span><span class="n">traverse</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">collections</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">args</span>
+
+    <span class="n">schedule</span> <span class="o">=</span> <span class="n">get_scheduler</span><span class="p">(</span>
+        <span class="n">scheduler</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;scheduler&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="n">collections</span><span class="o">=</span><span class="n">collections</span><span class="p">,</span>
+        <span class="n">get</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;get&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">dsk</span> <span class="o">=</span> <span class="n">collections_to_dsk</span><span class="p">(</span><span class="n">collections</span><span class="p">,</span> <span class="n">optimize_graph</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">keys</span><span class="p">,</span> <span class="n">postcomputes</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">collections</span><span class="p">:</span>
+        <span class="n">keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">__dask_keys__</span><span class="p">())</span>
+        <span class="n">postcomputes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">__dask_postcompute__</span><span class="p">())</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="n">schedule</span><span class="p">(</span><span class="n">dsk</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">repack</span><span class="p">([</span><span class="n">f</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="o">*</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">postcomputes</span><span class="p">)])</span>
+
+
+<span class="k">def</span> <span class="nf">visualize</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Visualize several dask graphs at once.</span>
+
+<span class="sd">    Requires ``graphviz`` to be installed. All options that are not the dask</span>
+<span class="sd">    graph(s) should be passed as keyword arguments.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dsk : dict(s) or collection(s)</span>
+<span class="sd">        The dask graph(s) to visualize.</span>
+<span class="sd">    filename : str or None, optional</span>
+<span class="sd">        The name of the file to write to disk. If the provided `filename`</span>
+<span class="sd">        doesn&#39;t include an extension, &#39;.png&#39; will be used by default.</span>
+<span class="sd">        If `filename` is None, no file will be written, and we communicate</span>
+<span class="sd">        with dot using only pipes.</span>
+<span class="sd">    format : {&#39;png&#39;, &#39;pdf&#39;, &#39;dot&#39;, &#39;svg&#39;, &#39;jpeg&#39;, &#39;jpg&#39;}, optional</span>
+<span class="sd">        Format in which to write output file.  Default is &#39;png&#39;.</span>
+<span class="sd">    optimize_graph : bool, optional</span>
+<span class="sd">        If True, the graph is optimized before rendering.  Otherwise,</span>
+<span class="sd">        the graph is displayed as is. Default is False.</span>
+<span class="sd">    color : {None, &#39;order&#39;}, optional</span>
+<span class="sd">        Options to color nodes.  Provide ``cmap=`` keyword for additional</span>
+<span class="sd">        colormap</span>
+<span class="sd">    collapse_outputs : bool, optional</span>
+<span class="sd">        Whether to collapse output boxes, which often have empty labels.</span>
+<span class="sd">        Default is False.</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        Whether to label output and input boxes even if the data aren&#39;t chunked.</span>
+<span class="sd">        Beware: these labels can get very long. Default is False.</span>
+<span class="sd">    **kwargs</span>
+<span class="sd">       Additional keyword arguments to forward to ``to_graphviz``.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; x.visualize(filename=&#39;dask.pdf&#39;)  # doctest: +SKIP</span>
+<span class="sd">    &gt;&gt;&gt; x.visualize(filename=&#39;dask.pdf&#39;, color=&#39;order&#39;)  # doctest: +SKIP</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    result : IPython.diplay.Image, IPython.display.SVG, or None</span>
+<span class="sd">        See dask.dot.dot_graph for more information.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    dask.dot.dot_graph</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    For more information on optimization see here:</span>
+
+<span class="sd">    https://docs.dask.org/en/latest/optimize.html</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">dask.dot</span> <span class="kn">import</span> <span class="n">dot_graph</span>
+
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;filename&quot;</span><span class="p">,</span> <span class="s2">&quot;mydask&quot;</span><span class="p">)</span>
+    <span class="n">optimize_graph</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;optimize_graph&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">dsks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">args3</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">set</span><span class="p">)):</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">arg</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+                    <span class="n">dsks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">is_dask_collection</span><span class="p">(</span><span class="n">a</span><span class="p">):</span>
+                    <span class="n">args3</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+                <span class="n">dsks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">is_dask_collection</span><span class="p">(</span><span class="n">arg</span><span class="p">):</span>
+                <span class="n">args3</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+
+    <span class="n">dsk</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">collections_to_dsk</span><span class="p">(</span><span class="n">args3</span><span class="p">,</span> <span class="n">optimize_graph</span><span class="o">=</span><span class="n">optimize_graph</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dsks</span><span class="p">:</span>
+        <span class="n">dsk</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+
+    <span class="n">color</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;color&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">color</span> <span class="o">==</span> <span class="s2">&quot;order&quot;</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">.order</span> <span class="kn">import</span> <span class="n">order</span>
+        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+        <span class="n">o</span> <span class="o">=</span> <span class="n">order</span><span class="p">(</span><span class="n">dsk</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cmap</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;cmap&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">cmap</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">RdBu</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cmap</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+            <span class="n">cmap</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="p">,</span> <span class="n">cmap</span><span class="p">)</span>
+        <span class="n">mx</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">o</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">colors</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">_colorize</span><span class="p">(</span><span class="n">cmap</span><span class="p">(</span><span class="n">v</span> <span class="o">/</span> <span class="n">mx</span><span class="p">,</span> <span class="nb">bytes</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">o</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;function_attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">o</span><span class="p">[</span><span class="n">k</span><span class="p">])}</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">colors</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;data_attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">}</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">colors</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="k">elif</span> <span class="n">color</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Unknown value color=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">color</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dot_graph</span><span class="p">(</span><span class="n">dsk</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">persist</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Persist multiple Dask collections into memory</span>
+
+<span class="sd">    This turns lazy Dask collections into Dask collections with the same</span>
+<span class="sd">    metadata, but now with their results fully computed or actively computing</span>
+<span class="sd">    in the background.</span>
+
+<span class="sd">    For example a lazy dask.array built up from many lazy calls will now be a</span>
+<span class="sd">    dask.array of the same shape, dtype, chunks, etc., but now with all of</span>
+<span class="sd">    those previously lazy tasks either computed in memory as many small :class:`numpy.array`</span>
+<span class="sd">    (in the single-machine case) or asynchronously running in the</span>
+<span class="sd">    background on a cluster (in the distributed case).</span>
+
+<span class="sd">    This function operates differently if a ``dask.distributed.Client`` exists</span>
+<span class="sd">    and is connected to a distributed scheduler.  In this case this function</span>
+<span class="sd">    will return as soon as the task graph has been submitted to the cluster,</span>
+<span class="sd">    but before the computations have completed.  Computations will continue</span>
+<span class="sd">    asynchronously in the background.  When using this function with the single</span>
+<span class="sd">    machine scheduler it blocks until the computations have finished.</span>
+
+<span class="sd">    When using Dask on a single machine you should ensure that the dataset fits</span>
+<span class="sd">    entirely within memory.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; df = dd.read_csv(&#39;/path/to/*.csv&#39;)  # doctest: +SKIP</span>
+<span class="sd">    &gt;&gt;&gt; df = df[df.name == &#39;Alice&#39;]  # doctest: +SKIP</span>
+<span class="sd">    &gt;&gt;&gt; df[&#39;in-debt&#39;] = df.balance &lt; 0  # doctest: +SKIP</span>
+<span class="sd">    &gt;&gt;&gt; df = df.persist()  # triggers computation  # doctest: +SKIP</span>
+
+<span class="sd">    &gt;&gt;&gt; df.value().min()  # future computations are now fast  # doctest: +SKIP</span>
+<span class="sd">    -10</span>
+<span class="sd">    &gt;&gt;&gt; df.value().max()  # doctest: +SKIP</span>
+<span class="sd">    100</span>
+
+<span class="sd">    &gt;&gt;&gt; from dask import persist  # use persist function on multiple collections</span>
+<span class="sd">    &gt;&gt;&gt; a, b = persist(a, b)  # doctest: +SKIP</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    *args: Dask collections</span>
+<span class="sd">    scheduler : string, optional</span>
+<span class="sd">        Which scheduler to use like &quot;threads&quot;, &quot;synchronous&quot; or &quot;processes&quot;.</span>
+<span class="sd">        If not provided, the default is to check the global settings first,</span>
+<span class="sd">        and then fall back to the collection defaults.</span>
+<span class="sd">    traverse : bool, optional</span>
+<span class="sd">        By default dask traverses builtin python collections looking for dask</span>
+<span class="sd">        objects passed to ``persist``. For large collections this can be</span>
+<span class="sd">        expensive. If none of the arguments contain any dask objects, set</span>
+<span class="sd">        ``traverse=False`` to avoid doing this traversal.</span>
+<span class="sd">    optimize_graph : bool, optional</span>
+<span class="sd">        If True [default], the graph is optimized before computation.</span>
+<span class="sd">        Otherwise the graph is run as is. This can be useful for debugging.</span>
+<span class="sd">    **kwargs</span>
+<span class="sd">        Extra keywords to forward to the scheduler function.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    New dask collections backed by in-memory data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">traverse</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;traverse&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="n">optimize_graph</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;optimize_graph&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">collections</span><span class="p">,</span> <span class="n">repack</span> <span class="o">=</span> <span class="n">unpack_collections</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">traverse</span><span class="o">=</span><span class="n">traverse</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">collections</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">args</span>
+
+    <span class="n">schedule</span> <span class="o">=</span> <span class="n">get_scheduler</span><span class="p">(</span>
+        <span class="n">scheduler</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;scheduler&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">collections</span><span class="o">=</span><span class="n">collections</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">ismethod</span><span class="p">(</span><span class="n">schedule</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">distributed.client</span> <span class="kn">import</span> <span class="n">default_client</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">client</span> <span class="o">=</span> <span class="n">default_client</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">client</span><span class="o">.</span><span class="n">get</span> <span class="o">==</span> <span class="n">schedule</span><span class="p">:</span>
+                    <span class="n">results</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">persist</span><span class="p">(</span>
+                        <span class="n">collections</span><span class="p">,</span> <span class="n">optimize_graph</span><span class="o">=</span><span class="n">optimize_graph</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+                    <span class="p">)</span>
+                    <span class="k">return</span> <span class="n">repack</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+
+    <span class="n">dsk</span> <span class="o">=</span> <span class="n">collections_to_dsk</span><span class="p">(</span><span class="n">collections</span><span class="p">,</span> <span class="n">optimize_graph</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">keys</span><span class="p">,</span> <span class="n">postpersists</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">collections</span><span class="p">:</span>
+        <span class="n">a_keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">flatten</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">__dask_keys__</span><span class="p">()))</span>
+        <span class="n">rebuild</span><span class="p">,</span> <span class="n">state</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">__dask_postpersist__</span><span class="p">()</span>
+        <span class="n">keys</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">a_keys</span><span class="p">)</span>
+        <span class="n">postpersists</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">rebuild</span><span class="p">,</span> <span class="n">a_keys</span><span class="p">,</span> <span class="n">state</span><span class="p">))</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="n">schedule</span><span class="p">(</span><span class="n">dsk</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">results</span><span class="p">))</span>
+    <span class="n">results2</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">ks</span><span class="p">},</span> <span class="o">*</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">ks</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">postpersists</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">repack</span><span class="p">(</span><span class="n">results2</span><span class="p">)</span>
+
+
+<span class="c1">############</span>
+<span class="c1"># Tokenize #</span>
+<span class="c1">############</span>
+
+
+<span class="k">def</span> <span class="nf">tokenize</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Deterministic token</span>
+
+<span class="sd">    &gt;&gt;&gt; tokenize([1, 2, &#39;3&#39;])</span>
+<span class="sd">    &#39;7d6a880cd9ec03506eee6973ff551339&#39;</span>
+
+<span class="sd">    &gt;&gt;&gt; tokenize(&#39;Hello&#39;) == tokenize(&#39;Hello&#39;)</span>
+<span class="sd">    True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="n">args</span> <span class="o">+</span> <span class="p">(</span><span class="n">kwargs</span><span class="p">,)</span>
+    <span class="k">return</span> <span class="n">md5</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">normalize_token</span><span class="p">,</span> <span class="n">args</span><span class="p">)))</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+
+
+<span class="n">normalize_token</span> <span class="o">=</span> <span class="n">Dispatch</span><span class="p">()</span>
+<span class="n">normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span>
+    <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">),</span> <span class="nb">type</span><span class="p">,</span> <span class="nb">slice</span><span class="p">,</span> <span class="nb">complex</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">Ellipsis</span><span class="p">)),</span> <span class="n">identity</span>
+<span class="p">)</span>
+
+
+<span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">normalize_dict</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">normalize_token</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="nb">str</span><span class="p">))</span>
+
+
+<span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">OrderedDict</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">normalize_ordered_dict</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">normalize_token</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+
+
+<span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">normalize_set</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">normalize_token</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="nb">str</span><span class="p">))</span>
+
+
+<span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">((</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">normalize_seq</span><span class="p">(</span><span class="n">seq</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">seq</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">normalize_token</span><span class="p">,</span> <span class="n">seq</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">RecursionError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">func</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+
+
+<span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">literal</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">normalize_literal</span><span class="p">(</span><span class="n">lit</span><span class="p">):</span>
+    <span class="k">return</span> <span class="s2">&quot;literal&quot;</span><span class="p">,</span> <span class="n">normalize_token</span><span class="p">(</span><span class="n">lit</span><span class="p">())</span>
+
+
+<span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="nb">range</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">normalize_range</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">normalize_token</span><span class="p">,</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">step</span><span class="p">]))</span>
+
+
+<span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">normalize_object</span><span class="p">(</span><span class="n">o</span><span class="p">):</span>
+    <span class="n">method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="s2">&quot;__dask_tokenize__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">method</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">normalize_function</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="k">else</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span>
+
+
+<span class="n">function_cache</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">function_cache_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">normalize_function</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">function_cache</span><span class="p">[</span><span class="n">func</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">_normalize_function</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">function_cache</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">500</span><span class="p">:</span>  <span class="c1"># clear half of cache if full</span>
+            <span class="k">with</span> <span class="n">function_cache_lock</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">function_cache</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">500</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">function_cache</span><span class="p">)[::</span><span class="mi">2</span><span class="p">]:</span>
+                        <span class="k">del</span> <span class="n">function_cache</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="n">function_cache</span><span class="p">[</span><span class="n">func</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
+        <span class="k">return</span> <span class="n">result</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>  <span class="c1"># not hashable</span>
+        <span class="k">return</span> <span class="n">_normalize_function</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_normalize_function</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">Compose</span><span class="p">):</span>
+        <span class="n">first</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s2">&quot;first&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">funcs</span> <span class="o">=</span> <span class="nb">reversed</span><span class="p">((</span><span class="n">first</span><span class="p">,)</span> <span class="o">+</span> <span class="n">func</span><span class="o">.</span><span class="n">funcs</span><span class="p">)</span> <span class="k">if</span> <span class="n">first</span> <span class="k">else</span> <span class="n">func</span><span class="o">.</span><span class="n">funcs</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">normalize_function</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="p">(</span><span class="n">partial</span><span class="p">,</span> <span class="n">curry</span><span class="p">)):</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">normalize_token</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">func</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">func</span><span class="o">.</span><span class="n">keywords</span><span class="p">:</span>
+            <span class="n">kws</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">normalize_token</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="n">keywords</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">kws</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">normalize_function</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="n">func</span><span class="p">),</span> <span class="n">args</span><span class="p">,</span> <span class="n">kws</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">protocol</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="sa">b</span><span class="s2">&quot;__main__&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>  <span class="c1"># abort on dynamic functions</span>
+                <span class="k">return</span> <span class="n">result</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">cloudpickle</span>
+
+            <span class="k">return</span> <span class="n">cloudpickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">protocol</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+
+
+<span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register_lazy</span><span class="p">(</span><span class="s2">&quot;pandas&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">register_pandas</span><span class="p">():</span>
+    <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+    <span class="c1"># Intentionally not importing PANDAS_GT_0240 from dask.dataframe._compat</span>
+    <span class="c1"># to avoid ImportErrors from extra dependencies</span>
+    <span class="n">PANDAS_GT_0240</span> <span class="o">=</span> <span class="n">LooseVersion</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">LooseVersion</span><span class="p">(</span><span class="s2">&quot;0.24.0&quot;</span><span class="p">)</span>
+
+    <span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">normalize_index</span><span class="p">(</span><span class="n">ind</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">PANDAS_GT_0240</span><span class="p">:</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">ind</span><span class="o">.</span><span class="n">array</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">ind</span><span class="o">.</span><span class="n">values</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">ind</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">normalize_token</span><span class="p">(</span><span class="n">values</span><span class="p">)]</span>
+
+    <span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">normalize_index</span><span class="p">(</span><span class="n">ind</span><span class="p">):</span>
+        <span class="n">codes</span> <span class="o">=</span> <span class="n">ind</span><span class="o">.</span><span class="n">codes</span> <span class="k">if</span> <span class="n">PANDAS_GT_0240</span> <span class="k">else</span> <span class="n">ind</span><span class="o">.</span><span class="n">levels</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="p">[</span><span class="n">ind</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+            <span class="o">+</span> <span class="p">[</span><span class="n">normalize_token</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">ind</span><span class="o">.</span><span class="n">levels</span><span class="p">]</span>
+            <span class="o">+</span> <span class="p">[</span><span class="n">normalize_token</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">codes</span><span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Categorical</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">normalize_categorical</span><span class="p">(</span><span class="n">cat</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">normalize_token</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">codes</span><span class="p">),</span> <span class="n">normalize_token</span><span class="p">(</span><span class="n">cat</span><span class="o">.</span><span class="n">dtype</span><span class="p">)]</span>
+
+    <span class="k">if</span> <span class="n">PANDAS_GT_0240</span><span class="p">:</span>
+
+        <span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">arrays</span><span class="o">.</span><span class="n">PeriodArray</span><span class="p">)</span>
+        <span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">arrays</span><span class="o">.</span><span class="n">DatetimeArray</span><span class="p">)</span>
+        <span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">arrays</span><span class="o">.</span><span class="n">TimedeltaArray</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">normalize_period_array</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">normalize_token</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">asi8</span><span class="p">),</span> <span class="n">normalize_token</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">dtype</span><span class="p">)]</span>
+
+        <span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">arrays</span><span class="o">.</span><span class="n">IntervalArray</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">normalize_interval_array</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span>
+                <span class="n">normalize_token</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">left</span><span class="p">),</span>
+                <span class="n">normalize_token</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">right</span><span class="p">),</span>
+                <span class="n">normalize_token</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">closed</span><span class="p">),</span>
+            <span class="p">]</span>
+
+    <span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">normalize_series</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+            <span class="n">normalize_token</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">blocks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">),</span>
+            <span class="n">normalize_token</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">index</span><span class="p">),</span>
+        <span class="p">]</span>
+
+    <span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">normalize_dataframe</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">block</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">blocks</span><span class="p">]</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">])</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">normalize_token</span><span class="p">,</span> <span class="n">data</span><span class="p">))</span>
+
+    <span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">extensions</span><span class="o">.</span><span class="n">ExtensionArray</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">normalize_extension_array</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+        <span class="k">return</span> <span class="n">normalize_token</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">arr</span><span class="p">))</span>
+
+    <span class="c1"># Dtypes</span>
+    <span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">normalize_categorical_dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">normalize_token</span><span class="p">(</span><span class="n">dtype</span><span class="o">.</span><span class="n">categories</span><span class="p">),</span> <span class="n">normalize_token</span><span class="p">(</span><span class="n">dtype</span><span class="o">.</span><span class="n">ordered</span><span class="p">)]</span>
+
+    <span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">extensions</span><span class="o">.</span><span class="n">ExtensionDtype</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">normalize_period_dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">normalize_token</span><span class="p">(</span><span class="n">dtype</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+
+<span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register_lazy</span><span class="p">(</span><span class="s2">&quot;numpy&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">register_numpy</span><span class="p">():</span>
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+    <span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">normalize_array</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span> <span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot;filename&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">base</span><span class="p">,</span> <span class="s2">&quot;ctypes&quot;</span><span class="p">):</span>
+                <span class="n">offset</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">x</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">get_as_parameter</span><span class="p">()</span><span class="o">.</span><span class="n">value</span>
+                    <span class="o">-</span> <span class="n">x</span><span class="o">.</span><span class="n">base</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">get_as_parameter</span><span class="p">()</span><span class="o">.</span><span class="n">value</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># root memmap&#39;s have mmap object as base</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span>
+                <span class="n">x</span><span class="p">,</span> <span class="s2">&quot;offset&quot;</span>
+            <span class="p">):</span>  <span class="c1"># offset numpy used while opening, and not the offset to the beginning of the file</span>
+                <span class="n">offset</span> <span class="o">+=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot;offset&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="n">x</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getmtime</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">filename</span><span class="p">),</span>
+                <span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+                <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                <span class="n">x</span><span class="o">.</span><span class="n">strides</span><span class="p">,</span>
+                <span class="n">offset</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">hasobject</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c1"># string fast-path</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">hash_buffer_hex</span><span class="p">(</span>
+                        <span class="s2">&quot;-&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">flat</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span>
+                            <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;surrogatepass&quot;</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="ne">UnicodeDecodeError</span><span class="p">:</span>
+                    <span class="c1"># bytes fast-path</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">hash_buffer_hex</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;-&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">flat</span><span class="p">))</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">UnicodeDecodeError</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">hash_buffer_hex</span><span class="p">(</span><span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pickle</span><span class="o">.</span><span class="n">HIGHEST_PROTOCOL</span><span class="p">))</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="c1"># pickling not supported, use UUID4-based fallback</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">hash_buffer_hex</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">&quot;K&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="s2">&quot;i1&quot;</span><span class="p">))</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">BufferError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">hash_buffer_hex</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">&quot;K&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="s2">&quot;i1&quot;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">strides</span><span class="p">)</span>
+
+    <span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">normalize_matrix</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">normalize_array</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">))</span>
+
+    <span class="n">normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="nb">repr</span><span class="p">)</span>
+    <span class="n">normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">,</span> <span class="nb">repr</span><span class="p">)</span>
+
+    <span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ufunc</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">normalize_ufunc</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="vm">__name__</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="ow">is</span> <span class="n">x</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s2">&quot;np.&quot;</span> <span class="o">+</span> <span class="n">name</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">normalize_function</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+
+<span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register_lazy</span><span class="p">(</span><span class="s2">&quot;scipy&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">register_scipy</span><span class="p">():</span>
+    <span class="kn">import</span> <span class="nn">scipy.sparse</span> <span class="k">as</span> <span class="nn">sp</span>
+
+    <span class="k">def</span> <span class="nf">normalize_sparse_matrix</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+            <span class="n">normalize_seq</span><span class="p">((</span><span class="n">normalize_token</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">)),</span>
+        <span class="p">)</span>
+
+    <span class="k">for</span> <span class="bp">cls</span><span class="p">,</span> <span class="n">attrs</span> <span class="ow">in</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">dia_matrix</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;offsets&quot;</span><span class="p">,</span> <span class="s2">&quot;shape&quot;</span><span class="p">)),</span>
+        <span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">bsr_matrix</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;indices&quot;</span><span class="p">,</span> <span class="s2">&quot;indptr&quot;</span><span class="p">,</span> <span class="s2">&quot;blocksize&quot;</span><span class="p">,</span> <span class="s2">&quot;shape&quot;</span><span class="p">)),</span>
+        <span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">coo_matrix</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;row&quot;</span><span class="p">,</span> <span class="s2">&quot;col&quot;</span><span class="p">,</span> <span class="s2">&quot;shape&quot;</span><span class="p">)),</span>
+        <span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;indices&quot;</span><span class="p">,</span> <span class="s2">&quot;indptr&quot;</span><span class="p">,</span> <span class="s2">&quot;shape&quot;</span><span class="p">)),</span>
+        <span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">csc_matrix</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;indices&quot;</span><span class="p">,</span> <span class="s2">&quot;indptr&quot;</span><span class="p">,</span> <span class="s2">&quot;shape&quot;</span><span class="p">)),</span>
+        <span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">lil_matrix</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;rows&quot;</span><span class="p">,</span> <span class="s2">&quot;shape&quot;</span><span class="p">)),</span>
+    <span class="p">]:</span>
+        <span class="n">normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">partial</span><span class="p">(</span><span class="n">normalize_sparse_matrix</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="n">attrs</span><span class="p">))</span>
+
+    <span class="nd">@normalize_token</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">dok_matrix</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">normalize_dok_matrix</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">normalize_token</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+
+
+<span class="k">def</span> <span class="nf">_colorize</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert (r, g, b) triple to &quot;#RRGGBB&quot; string</span>
+
+<span class="sd">    For use with ``visualize(color=...)``</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; _colorize((255, 255, 255))</span>
+<span class="sd">    &#39;#FFFFFF&#39;</span>
+<span class="sd">    &gt;&gt;&gt; _colorize((0, 32, 128))</span>
+<span class="sd">    &#39;#002080&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">v</span> <span class="o">*</span> <span class="mi">256</span> <span class="o">**</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">-</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="nb">hex</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">))[</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="s2">&quot;0&quot;</span> <span class="o">*</span> <span class="p">(</span><span class="mi">6</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">h</span><span class="p">))</span> <span class="o">+</span> <span class="n">h</span>
+    <span class="k">return</span> <span class="s2">&quot;#&quot;</span> <span class="o">+</span> <span class="n">h</span>
+
+
+<span class="n">named_schedulers</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;sync&quot;</span><span class="p">:</span> <span class="n">local</span><span class="o">.</span><span class="n">get_sync</span><span class="p">,</span>
+    <span class="s2">&quot;synchronous&quot;</span><span class="p">:</span> <span class="n">local</span><span class="o">.</span><span class="n">get_sync</span><span class="p">,</span>
+    <span class="s2">&quot;single-threaded&quot;</span><span class="p">:</span> <span class="n">local</span><span class="o">.</span><span class="n">get_sync</span><span class="p">,</span>
+    <span class="s2">&quot;threads&quot;</span><span class="p">:</span> <span class="n">threaded</span><span class="o">.</span><span class="n">get</span><span class="p">,</span>
+    <span class="s2">&quot;threading&quot;</span><span class="p">:</span> <span class="n">threaded</span><span class="o">.</span><span class="n">get</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">dask</span> <span class="kn">import</span> <span class="n">multiprocessing</span> <span class="k">as</span> <span class="n">dask_multiprocessing</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="k">pass</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">named_schedulers</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;processes&quot;</span><span class="p">:</span> <span class="n">dask_multiprocessing</span><span class="o">.</span><span class="n">get</span><span class="p">,</span>
+            <span class="s2">&quot;multiprocessing&quot;</span><span class="p">:</span> <span class="n">dask_multiprocessing</span><span class="o">.</span><span class="n">get</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+
+
+<span class="n">get_err_msg</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">The get= keyword has been removed.</span>
+
+<span class="s2">Please use the scheduler= keyword instead with the name of</span>
+<span class="s2">the desired scheduler like &#39;threads&#39; or &#39;processes&#39;</span>
+
+<span class="s2">    x.compute(scheduler=&#39;single-threaded&#39;)</span>
+<span class="s2">    x.compute(scheduler=&#39;threads&#39;)</span>
+<span class="s2">    x.compute(scheduler=&#39;processes&#39;)</span>
+
+<span class="s2">or with a function that takes the graph and keys</span>
+
+<span class="s2">    x.compute(scheduler=my_scheduler_function)</span>
+
+<span class="s2">or with a Dask client</span>
+
+<span class="s2">    x.compute(scheduler=client)</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">get_scheduler</span><span class="p">(</span><span class="n">get</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scheduler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">collections</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get scheduler function</span>
+
+<span class="sd">    There are various ways to specify the scheduler to use:</span>
+
+<span class="sd">    1.  Passing in scheduler= parameters</span>
+<span class="sd">    2.  Passing these into global configuration</span>
+<span class="sd">    3.  Using defaults of a dask collection</span>
+
+<span class="sd">    This function centralizes the logic to determine the right scheduler to use</span>
+<span class="sd">    from those many options</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">get</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">get_err_msg</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">scheduler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">callable</span><span class="p">(</span><span class="n">scheduler</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">scheduler</span>
+        <span class="k">elif</span> <span class="s2">&quot;Client&quot;</span> <span class="ow">in</span> <span class="nb">type</span><span class="p">(</span><span class="n">scheduler</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">scheduler</span><span class="p">,</span> <span class="s2">&quot;get&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">scheduler</span><span class="o">.</span><span class="n">get</span>
+        <span class="k">elif</span> <span class="n">scheduler</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">named_schedulers</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">named_schedulers</span><span class="p">[</span><span class="n">scheduler</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+        <span class="k">elif</span> <span class="n">scheduler</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;dask.distributed&quot;</span><span class="p">,</span> <span class="s2">&quot;distributed&quot;</span><span class="p">):</span>
+            <span class="kn">from</span> <span class="nn">distributed.worker</span> <span class="kn">import</span> <span class="n">get_client</span>
+
+            <span class="k">return</span> <span class="n">get_client</span><span class="p">()</span><span class="o">.</span><span class="n">get</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Expected one of [distributed, </span><span class="si">%s</span><span class="s2">]&quot;</span>
+                <span class="o">%</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">named_schedulers</span><span class="p">))</span>
+            <span class="p">)</span>
+        <span class="c1"># else:  # try to connect to remote scheduler with this name</span>
+        <span class="c1">#     return get_client(scheduler).get</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scheduler&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">get_scheduler</span><span class="p">(</span><span class="n">scheduler</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scheduler&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;get&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">get_err_msg</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">thread_state</span><span class="p">,</span> <span class="s2">&quot;key&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">distributed.worker</span> <span class="kn">import</span> <span class="n">get_worker</span>
+
+        <span class="k">return</span> <span class="n">get_worker</span><span class="p">()</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">get</span>
+
+    <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__dask_scheduler__</span>
+
+    <span class="k">if</span> <span class="n">collections</span><span class="p">:</span>
+        <span class="n">collections</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">collections</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">collections</span><span class="p">:</span>
+        <span class="n">get</span> <span class="o">=</span> <span class="n">collections</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">__dask_scheduler__</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">__dask_scheduler__</span> <span class="o">==</span> <span class="n">get</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">collections</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Compute called on multiple collections with &quot;</span>
+                <span class="s2">&quot;differing default schedulers. Please specify a &quot;</span>
+                <span class="s2">&quot;scheduler=` parameter explicitly in compute or &quot;</span>
+                <span class="s2">&quot;globally with `dask.config.set`.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">get</span>
+
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="k">def</span> <span class="nf">wait</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_when</span><span class="o">=</span><span class="s2">&quot;ALL_COMPLETED&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Wait until computation has finished</span>
+
+<span class="sd">    This is a compatibility alias for ``dask.distributed.wait``.</span>
+<span class="sd">    If it is applied onto Dask collections without Dask Futures or if Dask</span>
+<span class="sd">    distributed is not installed then it is a no-op</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">distributed</span> <span class="kn">import</span> <span class="n">wait</span>
+
+        <span class="k">return</span> <span class="n">wait</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span> <span class="n">return_when</span><span class="o">=</span><span class="n">return_when</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ImportError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">x</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Suhas Somnath, Gerd Duscher, and contributors
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
